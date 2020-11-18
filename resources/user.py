@@ -3,6 +3,12 @@ from flask_jwt_extended import jwt_optional, get_jwt_identity
 from http import HTTPStatus
 from flask_restful import Resource
 from flask_jwt_extended import jwt_optional, get_jwt_identity, jwt_required
+from schemas.user import UserSchema
+
+
+user_schema = UserSchema()
+user_public_schema = UserSchema(exclude=('email', ))
+
 
 class MeResource(Resource):
     @jwt_required
@@ -20,8 +26,9 @@ class MeResource(Resource):
 
 
 
+
 class User(db.Model):
-    _tablename_ = 'user'
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False, unique=True)
     email = db.Column(db.String(200), nullable=False, unique=True)
