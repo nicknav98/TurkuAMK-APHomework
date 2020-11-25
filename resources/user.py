@@ -1,3 +1,5 @@
+from flask import request
+
 from extensions import db
 from flask_jwt_extended import jwt_optional, get_jwt_identity
 from http import HTTPStatus
@@ -16,9 +18,9 @@ class MeResource(Resource):
         user = User.get_by_id(id=get_jwt_identity())
 
         data = {
-            'id': user.id
-            'username': user.username
-            'email':user.email
+            'id': user.id,
+            'username': user.username,
+            'email': user.email
 
         }
 
@@ -82,3 +84,29 @@ class UserResource(Resource):
             }
 
         return data, HTTPStatus.OK
+
+
+
+class UserListResource:
+    def post(self):
+        json_data = request.get_json()
+
+        data, errors = user_schema.load(data=json_data)
+
+        if errors:
+            return{'message':'Validation erros', 'errors': errors},HTTPStatus.BAD_REQUEST
+
+        if User.get_by_username(data.get('username')):
+            return {'message': 'username already exists'}, HTTPStatus.BAD_REQUEST
+
+        if User.get_by_email(data.get('email')):
+            return {'message': 'email already exists'}, HTTPStatus.BAD_REQUEST
+
+
+        user = User(**data)
+        user.save()
+
+        return user_schema.dump(user).data, HTTPStatus.CREATED
+
+
+
