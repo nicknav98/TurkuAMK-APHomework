@@ -35,3 +35,13 @@ class Instruction(db.Model):
             'duration': self.duration,
         }
 
+    @classmethod
+    def get_all_by_user(cls, user_id, visibility='public'):
+        if visibility == 'public':
+            return cls.query.filter_by(user_id=user_id, is_publish=True).all()
+
+        elif visibility == 'private':
+            return cls.query.filter_by(user_id=user_id, is_publish=False).all()
+
+        else:
+            return cls.query.filter_by(user_id=user_id).all()
