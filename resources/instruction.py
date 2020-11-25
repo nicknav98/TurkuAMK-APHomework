@@ -1,37 +1,34 @@
 from flask import request
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource
 from http import HTTPStatus
 
 from models.instructions import Instruction, instruction_list
+from schemas.InstructionSchema import InstructionSchema
 
+instruction_schema = InstructionSchema()
+instruction_list_schema = InstructionSchema(many=True)
 
 
 class InstructionListResource(Resource):
 
     def get(self):
+        instructions = Instruction.get_all_published()
 
-        data = []
-
-        for INSTRUCTION in instruction_list:
-            if INSTRUCTION.is_publish is True:
-                data.append(INSTRUCTION.data)
-
-        return {'data': data}, HTTPStatus.OK
-
+        return instruction_list_schema.dump(instructions).data, HTTPStatus.OK
+    @jwt_required
     def post(self):
-        data = request.get_json()
+        json_data = request.get_json()
+        current_user = get_jwt_identity()
+        data, errors = instruction_schema.load(data=json_data)
+        if errors:
+            return {'message': "Validation errors", 'errors': errors},
+            HTTPStatus.BAD_REQUEST
 
-        INSTRUCTION = Instruction(name=data['name'],
-                        description=data['description'],
-                        steps=data['steps'],
-                        tools=data['tools'],
-                        cost=data['cost'],
-                        duration=data['duration'])
-
-        instruction_list.append(Instruction)
-
-        return Instruction.data, HTTPStatus.CREATED
-
+        recipe = Recipe(**data)
+        recipe.user_id = current_user
+        recipe.save()
+        return instruction_schema(instruction).data, HTTPStatus.CREATED
 
 class InstructionResource(Resource):
 
