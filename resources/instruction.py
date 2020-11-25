@@ -30,6 +30,40 @@ class InstructionListResource(Resource):
         recipe.save()
         return instruction_schema(instruction).data, HTTPStatus.CREATED
 
+    @jwt_required
+    def patch(self, instruction_id):
+
+        json_data = request.get_json()
+
+        data, errors = instruction_schema.load(data=json_data, partial=('name',))
+
+
+        if errors:
+            return {'message': 'Validation errors', 'errors': errors}, HTTPStatus.BAD_REQUEST
+
+        instruction = Instruction.get_by_id(instruction_id=instruction_id)
+
+        if instruction is None:
+            return {'message': 'instructions not found'}, HTTPStatus.NOT_FOUND
+
+        current_user = get_jwt_identity()
+
+        if current_user != instruction.user_id:
+            return {'message': 'Access is not allowed'}, HTTPStatus.FORBIDDEN
+
+        instruction.name = data.get('name') or instruction.name
+        instruction.description = data.get('description') or instruction.description
+        instruction.steps = data.get('steps') or instruction.num_of_servings
+        instruction.tools = data.get('tools') or instruction.cook_time
+        instruction.cost = data.get('cost') or instruction.cost
+        instruction.duration = data.get('duation') or instruction.duration
+
+        instruction.save()
+
+        return instruction_schema.dump(instruction).data, HTTPStatus.OK
+
+
+
 class InstructionResource(Resource):
 
     def get(self, instruction_id):
